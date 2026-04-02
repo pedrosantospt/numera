@@ -365,11 +365,11 @@ fn restore_history(settings: &Settings) -> Vec<HistoryEntry> {
     for i in 0..count {
         let expression = settings.history_expressions[i].clone();
         let result = settings.history_results[i].clone();
-        let (value, is_error) = match temp_evaluator.evaluate(&expression, settings.radix_char) {
-            Ok((v, _)) => (v, false),
-            Err(_) => (HNumber::nan(), true),
+        let (value, format_override, is_error) = match temp_evaluator.evaluate(&expression, settings.radix_char) {
+            Ok((v, fmt)) => (v, fmt, false),
+            Err(_) => (HNumber::nan(), None, true),
         };
-        history.push(HistoryEntry { expression, result, value, format_override: None, is_error });
+        history.push(HistoryEntry { expression, result, value, format_override, is_error });
     }
 
     history
