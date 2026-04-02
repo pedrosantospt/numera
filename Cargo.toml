@@ -1,6 +1,6 @@
 [package]
 name = "numera"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 description = "Numera — A high-precision scientific calculator written in Rust"
 license = "GPL-2.0-or-later"
