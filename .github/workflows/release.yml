@@ -59,9 +59,7 @@ jobs:
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
-          cd target/${{ matrix.target }}/release
-          Compress-Archive -Path numera.exe -DestinationPath ../../../${{ matrix.artifact }}.zip
-          cd ../../..
+          Copy-Item "target/${{ matrix.target }}/release/numera.exe" "${{ matrix.artifact }}.exe"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -69,7 +67,7 @@ jobs:
           name: ${{ matrix.artifact }}
           path: |
             ${{ matrix.artifact }}.tar.gz
-            ${{ matrix.artifact }}.zip
+            ${{ matrix.artifact }}.exe
 
   release:
     name: Create Release
@@ -89,4 +87,4 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/**/*.tar.gz
-            artifacts/**/*.zip
+            artifacts/**/*.exe

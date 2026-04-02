@@ -68,7 +68,7 @@ Organized by category: General Physics, Electromagnetic, Atomic & Nuclear, Physi
 
 ```bash
 # Clone
-git clone https://github.com/nicokimmel/numera.git
+git clone https://github.com/pedrosantospt/numera.git
 cd numera
 
 # Run
@@ -79,6 +79,18 @@ cargo build --release
 
 # Run tests
 cargo test
+```
+
+### Pre-built binaries
+
+Download from [Releases](https://github.com/pedrosantospt/numera/releases).
+
+**macOS note:** Since the binary is not signed with an Apple Developer certificate, macOS Gatekeeper will block it. To allow it, run:
+
+```bash
+xattr -cr numera
+chmod +x numera
+./numera
 ```
 
 ## Project Structure
