@@ -1,0 +1,16 @@
+# Build artifacts
+/target/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Cargo.lock is committed for binary crates (recommended by Cargo docs)
+# Uncomment the next line if this becomes a library crate:
+# Cargo.lock

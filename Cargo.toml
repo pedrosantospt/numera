@@ -1,0 +1,23 @@
+[package]
+name = "numera"
+version = "0.1.0"
+edition = "2021"
+description = "Numera — A high-precision scientific calculator written in Rust"
+license = "GPL-2.0-or-later"
+
+[dependencies]
+eframe = "0.31"
+egui = "0.31"
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6"
+num-bigint = "0.4"
+num-rational = "0.4"
+num-integer = "0.1"
+num-traits = "0.2"
+arboard = { version = "3", default-features = false }
+
+[profile.release]
+opt-level = 3
+lto = true
