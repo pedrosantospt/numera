@@ -85,13 +85,14 @@ cargo test
 
 Download from [Releases](https://github.com/pedrosantospt/numera/releases).
 
-**macOS note:** Since the binary is not signed with an Apple Developer certificate, macOS Gatekeeper will block it. To allow it, run:
+**macOS note:** Since the app is not signed with an Apple Developer certificate, macOS Gatekeeper will block it. To allow it:
 
+1. Extract the `.tar.gz` — you'll get a `Numera.app` bundle
+2. Run the following to remove the quarantine flag:
 ```bash
-xattr -cr numera
-chmod +x numera
-./numera
+xattr -cr Numera.app
 ```
+3. Double-click `Numera.app` to launch
 
 ## Project Structure
 

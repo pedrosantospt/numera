@@ -49,12 +49,49 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package (Unix)
-        if: runner.os != 'Windows'
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
         run: |
           cd target/${{ matrix.target }}/release
           tar czf ../../../${{ matrix.artifact }}.tar.gz numera
           cd ../../..
+
+      - name: Package (macOS .app bundle)
+        if: runner.os == 'macOS'
+        run: |
+          APP="Numera.app"
+          mkdir -p "$APP/Contents/MacOS"
+          mkdir -p "$APP/Contents/Resources"
+          cp target/${{ matrix.target }}/release/numera "$APP/Contents/MacOS/numera"
+          cp src/resources/icon.icns "$APP/Contents/Resources/icon.icns"
+          VERSION="${GITHUB_REF_NAME#v}"
+          cat > "$APP/Contents/Info.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>Numera</string>
+            <key>CFBundleDisplayName</key>
+            <string>Numera</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.numera.app</string>
+            <key>CFBundleVersion</key>
+            <string>${VERSION}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${VERSION}</string>
+            <key>CFBundleExecutable</key>
+            <string>numera</string>
+            <key>CFBundleIconFile</key>
+            <string>icon</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+          tar czf ${{ matrix.artifact }}.tar.gz "$APP"
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
