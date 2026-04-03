@@ -13,6 +13,7 @@ fn font_id(fs: FontSettings) -> egui::FontId {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn show_results(
     ui: &mut egui::Ui,
     history: &[HistoryEntry],
@@ -51,6 +52,7 @@ fn show_empty_placeholder(ui: &mut egui::Ui) {
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn show_history_row(
     ui: &mut egui::Ui,
     entry: &HistoryEntry,
