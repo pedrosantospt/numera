@@ -16,10 +16,8 @@ pub fn show_about(
         let icon_bytes = include_bytes!("../resources/logo.png");
         let img = image::load_from_memory(icon_bytes).unwrap().into_rgba8();
         let (w, h) = img.dimensions();
-        let color_image = egui::ColorImage::from_rgba_unmultiplied(
-            [w as usize, h as usize],
-            img.as_raw(),
-        );
+        let color_image =
+            egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], img.as_raw());
         let t = ctx.load_texture("about_logo", color_image, egui::TextureOptions::LINEAR);
         *logo_texture = Some(t.clone());
         t
@@ -65,19 +63,9 @@ pub fn show_about(
                 ui.add_space(4.0);
 
                 ui.label(
-                    egui::RichText::new("Based on SpeedCrunch:")
+                    egui::RichText::new("Author: Pedro Santos")
                         .strong()
                         .size(12.0),
-                );
-                ui.label(
-                    egui::RichText::new("Original by Ariya Hidayat & Helder Correia")
-                        .size(11.0)
-                        .color(Theme::TEXT_DIM),
-                );
-                ui.label(
-                    egui::RichText::new("Licensed under GPL-2.0-or-later")
-                        .size(11.0)
-                        .color(Theme::TEXT_DIM),
                 );
 
                 ui.add_space(8.0);
@@ -99,6 +87,14 @@ pub fn show_about(
                 }
 
                 ui.add_space(10.0);
+
+                ui.label(
+                    egui::RichText::new("Inspired by SpeedCrunch")
+                        .size(10.0)
+                        .color(egui::Color32::from_rgb(100, 100, 120)),
+                );
+
+                ui.add_space(6.0);
                 if ui.button("Close").clicked() {
                     should_close = true;
                 }

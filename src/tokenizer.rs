@@ -91,7 +91,8 @@ pub fn tokenize(input: &str, radix_char: char) -> Result<Vec<Token>, String> {
         let pos = i;
 
         // Number: digit, or radix_char followed by digit, or 0x/0b/0o prefix
-        if ch.is_ascii_digit() || (ch == radix_char && i + 1 < len && chars[i + 1].is_ascii_digit())
+        if ch.is_ascii_digit()
+            || (ch == radix_char && i + 1 < len && chars[i + 1].is_ascii_digit())
             || (ch == '#' && i + 1 < len && chars[i + 1].is_ascii_hexdigit())
         {
             let mut num_str = String::new();
@@ -99,7 +100,15 @@ pub fn tokenize(input: &str, radix_char: char) -> Result<Vec<Token>, String> {
             // Check for base prefix
             if ch == '0' && i + 1 < len {
                 let next = chars[i + 1];
-                if next == 'x' || next == 'X' || next == 'b' || next == 'B' || next == 'o' || next == 'O' || next == 'd' || next == 'D' {
+                if next == 'x'
+                    || next == 'X'
+                    || next == 'b'
+                    || next == 'B'
+                    || next == 'o'
+                    || next == 'O'
+                    || next == 'd'
+                    || next == 'D'
+                {
                     num_str.push(ch);
                     num_str.push(next);
                     i += 2;
@@ -176,7 +185,9 @@ pub fn tokenize(input: &str, radix_char: char) -> Result<Vec<Token>, String> {
         // Identifier (variable or function name)
         if ch.is_ascii_alphabetic() || ch == '_' || ch == '$' {
             let mut ident = String::new();
-            while i < len && (chars[i].is_ascii_alphanumeric() || chars[i] == '_' || chars[i] == '$') {
+            while i < len
+                && (chars[i].is_ascii_alphanumeric() || chars[i] == '_' || chars[i] == '$')
+            {
                 ident.push(chars[i]);
                 i += 1;
             }
@@ -190,69 +201,117 @@ pub fn tokenize(input: &str, radix_char: char) -> Result<Vec<Token>, String> {
         // Operators and punctuation
         match ch {
             '+' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "+".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "+".to_string(),
+                });
                 i += 1;
             }
             '-' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "-".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "-".to_string(),
+                });
                 i += 1;
             }
             '*' => {
                 if i + 1 < len && chars[i + 1] == '*' {
-                    tokens.push(Token { token_type: TokenType::Operator, text: "**".to_string() });
+                    tokens.push(Token {
+                        token_type: TokenType::Operator,
+                        text: "**".to_string(),
+                    });
                     i += 2;
                 } else {
-                    tokens.push(Token { token_type: TokenType::Operator, text: "*".to_string() });
+                    tokens.push(Token {
+                        token_type: TokenType::Operator,
+                        text: "*".to_string(),
+                    });
                     i += 1;
                 }
             }
             '/' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "/".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "/".to_string(),
+                });
                 i += 1;
             }
             '^' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "^".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "^".to_string(),
+                });
                 i += 1;
             }
             '%' => {
-                tokens.push(Token { token_type: TokenType::Percent, text: "%".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Percent,
+                    text: "%".to_string(),
+                });
                 i += 1;
             }
             '!' => {
-                tokens.push(Token { token_type: TokenType::Factorial, text: "!".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Factorial,
+                    text: "!".to_string(),
+                });
                 i += 1;
             }
             '&' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "&".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "&".to_string(),
+                });
                 i += 1;
             }
             '|' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "|".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "|".to_string(),
+                });
                 i += 1;
             }
             '~' => {
-                tokens.push(Token { token_type: TokenType::Operator, text: "~".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Operator,
+                    text: "~".to_string(),
+                });
                 i += 1;
             }
             '(' => {
-                tokens.push(Token { token_type: TokenType::LeftParen, text: "(".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::LeftParen,
+                    text: "(".to_string(),
+                });
                 i += 1;
             }
             ')' => {
-                tokens.push(Token { token_type: TokenType::RightParen, text: ")".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::RightParen,
+                    text: ")".to_string(),
+                });
                 i += 1;
             }
             ',' | ';' => {
-                tokens.push(Token { token_type: TokenType::Comma, text: ",".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Comma,
+                    text: ",".to_string(),
+                });
                 i += 1;
             }
             '=' => {
-                tokens.push(Token { token_type: TokenType::Assign, text: "=".to_string() });
+                tokens.push(Token {
+                    token_type: TokenType::Assign,
+                    text: "=".to_string(),
+                });
                 i += 1;
             }
             '<' => {
                 if i + 1 < len && chars[i + 1] == '<' {
-                    tokens.push(Token { token_type: TokenType::Operator, text: "<<".to_string() });
+                    tokens.push(Token {
+                        token_type: TokenType::Operator,
+                        text: "<<".to_string(),
+                    });
                     i += 2;
                 } else {
                     return Err(format!("Unexpected character '<' at position {}", pos));
@@ -260,7 +319,10 @@ pub fn tokenize(input: &str, radix_char: char) -> Result<Vec<Token>, String> {
             }
             '>' => {
                 if i + 1 < len && chars[i + 1] == '>' {
-                    tokens.push(Token { token_type: TokenType::Operator, text: ">>".to_string() });
+                    tokens.push(Token {
+                        token_type: TokenType::Operator,
+                        text: ">>".to_string(),
+                    });
                     i += 2;
                 } else {
                     return Err(format!("Unexpected character '>' at position {}", pos));

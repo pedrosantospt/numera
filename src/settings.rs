@@ -7,13 +7,41 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+/// Font family selection
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum FontFamily {
+    Monospace,
+    Proportional,
+}
+
+impl FontFamily {
+    pub fn label(self) -> &'static str {
+        match self {
+            FontFamily::Monospace => "Monospace",
+            FontFamily::Proportional => "Proportional",
+        }
+    }
+}
+
+/// Font settings for a UI element
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct FontSettings {
+    pub family: FontFamily,
+    pub size: f32,
+}
+
+/// Default font sizes
+pub const DEFAULT_EXPRESSION_FONT: FontSettings = FontSettings { family: FontFamily::Monospace, size: 12.0 };
+pub const DEFAULT_RESULT_FONT: FontSettings = FontSettings { family: FontFamily::Monospace, size: 15.0 };
+pub const DEFAULT_INPUT_FONT: FontSettings = FontSettings { family: FontFamily::Monospace, size: 16.0 };
+
 /// Application settings (persisted to disk)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     // Math settings
     pub angle_mode: AngleMode,
     pub result_format: NumberFormat,
-    pub precision: i32, // -1 = auto
+    pub precision: i32,   // -1 = auto
     pub radix_char: char, // '.' or ','
 
     // Behavior
@@ -27,6 +55,11 @@ pub struct Settings {
     pub show_variables: bool,
     pub show_constants: bool,
     pub show_status_bar: bool,
+
+    // Font settings
+    pub expression_font: FontSettings,
+    pub result_font: FontSettings,
+    pub input_font: FontSettings,
 
     // History
     pub history_expressions: Vec<String>,
@@ -58,6 +91,10 @@ impl Default for Settings {
             show_constants: false,
             show_status_bar: true,
 
+            expression_font: DEFAULT_EXPRESSION_FONT,
+            result_font: DEFAULT_RESULT_FONT,
+            input_font: DEFAULT_INPUT_FONT,
+
             history_expressions: Vec::new(),
             history_results: Vec::new(),
 
@@ -84,12 +121,10 @@ impl Settings {
         let path = Self::config_path();
         if path.exists() {
             match fs::read_to_string(&path) {
-                Ok(data) => {
-                    match serde_json::from_str(&data) {
-                        Ok(settings) => return settings,
-                        Err(e) => eprintln!("Failed to parse settings: {}", e),
-                    }
-                }
+                Ok(data) => match serde_json::from_str(&data) {
+                    Ok(settings) => return settings,
+                    Err(e) => eprintln!("Failed to parse settings: {}", e),
+                },
                 Err(e) => eprintln!("Failed to read settings: {}", e),
             }
         }
@@ -136,5 +171,12 @@ impl Settings {
             NumberFormat::Octal => "Octal",
             NumberFormat::Binary => "Binary",
         }
+    }
+
+    /// Reset font settings to defaults
+    pub fn reset_fonts(&mut self) {
+        self.expression_font = DEFAULT_EXPRESSION_FONT;
+        self.result_font = DEFAULT_RESULT_FONT;
+        self.input_font = DEFAULT_INPUT_FONT;
     }
 }

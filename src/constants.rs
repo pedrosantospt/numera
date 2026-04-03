@@ -70,7 +70,6 @@ pub fn all_constants() -> Vec<Constant> {
             unit: "m/s",
             category: "General Physics",
         },
-
         // === Electromagnetic ===
         Constant {
             name: "Bohr-Procopiu Magneton",
@@ -126,7 +125,6 @@ pub fn all_constants() -> Vec<Constant> {
             unit: "Ω",
             category: "Electromagnetic",
         },
-
         // === Atomic & Nuclear ===
         Constant {
             name: "Bohr Radius",
@@ -176,7 +174,6 @@ pub fn all_constants() -> Vec<Constant> {
             unit: "",
             category: "Atomic & Nuclear",
         },
-
         // === Physico-chemical ===
         Constant {
             name: "Atomic Mass Unit",
@@ -238,7 +235,6 @@ pub fn all_constants() -> Vec<Constant> {
             unit: "W/(m²·K⁴)",
             category: "Physico-chemical",
         },
-
         // === Astronomy ===
         Constant {
             name: "Astronomical Unit",
@@ -311,10 +307,7 @@ pub fn all_constants() -> Vec<Constant> {
 
 /// Get sorted unique category names
 pub fn categories() -> Vec<&'static str> {
-    let mut cats: Vec<&str> = all_constants()
-        .iter()
-        .map(|c| c.category)
-        .collect();
+    let mut cats: Vec<&str> = all_constants().iter().map(|c| c.category).collect();
     cats.sort_unstable();
     cats.dedup();
     cats
@@ -335,7 +328,11 @@ mod tests {
     #[test]
     fn test_all_constants_non_empty() {
         let constants = all_constants();
-        assert!(constants.len() >= 44, "Expected at least 44 constants, got {}", constants.len());
+        assert!(
+            constants.len() >= 44,
+            "Expected at least 44 constants, got {}",
+            constants.len()
+        );
     }
 
     #[test]
@@ -344,9 +341,18 @@ mod tests {
             assert!(!c.value.is_empty(), "Constant '{}' has empty value", c.name);
             assert!(!c.name.is_empty(), "Found constant with empty name");
             // Value should be parseable as a number
-            let cleaned = c.value.replace("e", "E").replace("-", "").replace(".", "").replace("+", "");
-            assert!(cleaned.chars().all(|ch| ch.is_ascii_digit() || ch == 'E'),
-                "Constant '{}' has unparseable value '{}'", c.name, c.value);
+            let cleaned = c
+                .value
+                .replace("e", "E")
+                .replace("-", "")
+                .replace(".", "")
+                .replace("+", "");
+            assert!(
+                cleaned.chars().all(|ch| ch.is_ascii_digit() || ch == 'E'),
+                "Constant '{}' has unparseable value '{}'",
+                c.name,
+                c.value
+            );
         }
     }
 
@@ -373,15 +379,21 @@ mod tests {
     fn test_well_known_constants() {
         let all = all_constants();
         // Speed of light
-        let c = all.iter().find(|c| c.name.contains("Speed of Light")).unwrap();
+        let c = all
+            .iter()
+            .find(|c| c.name.contains("Speed of Light"))
+            .unwrap();
         assert!(c.value.starts_with("299792458"));
         // Avogadro
         let na = all.iter().find(|c| c.name.contains("Avogadro")).unwrap();
         assert!(na.value.contains("6.022"));
         // Planck
-        let h = all.iter().find(|c| c.name.contains("Planck") && !c.name.contains("Molar") && !c.name.contains("Dirac")).unwrap();
+        let h = all
+            .iter()
+            .find(|c| {
+                c.name.contains("Planck") && !c.name.contains("Molar") && !c.name.contains("Dirac")
+            })
+            .unwrap();
         assert!(h.value.contains("6.626"));
     }
 }
-
-

@@ -2,9 +2,9 @@
 // Parser (shunting-yard) and evaluator for mathematical expressions.
 // Supports variables, functions, multiple number bases, and operator precedence.
 
-use crate::math::{HNumber, HMath, AngleMode, NumberFormat};
-use crate::tokenizer::{tokenize, Token, TokenType, Operator};
 use crate::functions;
+use crate::math::{AngleMode, HMath, HNumber, NumberFormat};
+use crate::tokenizer::{tokenize, Operator, Token, TokenType};
 use std::collections::HashMap;
 
 /// Items on the output/operator stack during shunting-yard
@@ -62,7 +62,10 @@ impl Evaluator {
 
     /// Check if a name is a protected variable
     fn is_protected(name: &str) -> bool {
-        matches!(name.to_lowercase().as_str(), "pi" | "e" | "phi" | "i" | "j" | "ans")
+        matches!(
+            name.to_lowercase().as_str(),
+            "pi" | "e" | "phi" | "i" | "j" | "ans"
+        )
     }
 
     /// Set a variable (returns error if protected)
@@ -85,7 +88,6 @@ impl Evaluator {
     }
 
     /// Delete a user variable
-    #[allow(dead_code)]
     pub fn delete_variable(&mut self, name: &str) -> bool {
         let lower = name.to_lowercase();
         if Self::is_protected(&lower) {
@@ -130,7 +132,11 @@ impl Evaluator {
     }
 
     /// Evaluate an expression string
-    pub fn evaluate(&mut self, input: &str, radix_char: char) -> Result<(HNumber, Option<NumberFormat>), String> {
+    pub fn evaluate(
+        &mut self,
+        input: &str,
+        radix_char: char,
+    ) -> Result<(HNumber, Option<NumberFormat>), String> {
         let input = input.trim();
         if input.is_empty() {
             return Ok((HNumber::from_f64(0.0), None));
@@ -147,8 +153,13 @@ impl Evaluator {
             // Check if LHS is a valid identifier (not an operator expression)
             if !lhs.is_empty()
                 && !rhs.is_empty()
-                && lhs.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
-                && lhs.chars().next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
+                && lhs
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
+                && lhs
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
             {
                 let lower = lhs.to_lowercase();
                 if matches!(lower.as_str(), "pi" | "e" | "phi" | "i" | "j") {
@@ -171,7 +182,11 @@ impl Evaluator {
     }
 
     /// Core expression evaluator using shunting-yard algorithm
-    fn eval_expression(&self, input: &str, radix_char: char) -> Result<(HNumber, Option<NumberFormat>), String> {
+    fn eval_expression(
+        &self,
+        input: &str,
+        radix_char: char,
+    ) -> Result<(HNumber, Option<NumberFormat>), String> {
         let tokens = tokenize(input, radix_char)?;
 
         if tokens.is_empty() {
@@ -206,8 +221,11 @@ impl Evaluator {
                     if i + 1 < len && tokens[i + 1].token_type == TokenType::LeftParen {
                         op_stack.push(StackItem::FunctionCall(name_lower, 1));
                         i += 1; // skip identifier
-                        // The next token is '(' which we handle next iteration
-                    } else if functions::all_functions().iter().any(|f| f.name == name_lower) {
+                                // The next token is '(' which we handle next iteration
+                    } else if functions::all_functions()
+                        .iter()
+                        .any(|f| f.name == name_lower)
+                    {
                         // Implicit function syntax: "sin pi", "cos 1.2", "sin -90"
                         // Push as function call with 1 arg, the next value will be the arg
                         let func_name = name_lower.clone();
@@ -221,7 +239,8 @@ impl Evaluator {
                         // Actually, simpler: read one value (possibly with unary minus)
                         let mut arg_tokens: Vec<Token> = Vec::new();
                         // Handle optional unary +/-
-                        if i < len && tokens[i].token_type == TokenType::Operator
+                        if i < len
+                            && tokens[i].token_type == TokenType::Operator
                             && (tokens[i].text == "-" || tokens[i].text == "+")
                         {
                             arg_tokens.push(tokens[i].clone());
@@ -242,18 +261,25 @@ impl Evaluator {
                                     // Collect until matching close paren
                                     let mut depth = 0;
                                     while i < len {
-                                        if tokens[i].token_type == TokenType::LeftParen { depth += 1; }
-                                        if tokens[i].token_type == TokenType::RightParen { depth -= 1; }
+                                        if tokens[i].token_type == TokenType::LeftParen {
+                                            depth += 1;
+                                        }
+                                        if tokens[i].token_type == TokenType::RightParen {
+                                            depth -= 1;
+                                        }
                                         arg_tokens.push(tokens[i].clone());
                                         i += 1;
-                                        if depth == 0 { break; }
+                                        if depth == 0 {
+                                            break;
+                                        }
                                     }
                                 }
                                 _ => {}
                             }
                             // Handle postfix ! or % on the arg
-                            while i < len && (tokens[i].token_type == TokenType::Factorial
-                                || tokens[i].token_type == TokenType::Percent)
+                            while i < len
+                                && (tokens[i].token_type == TokenType::Factorial
+                                    || tokens[i].token_type == TokenType::Percent)
                             {
                                 arg_tokens.push(tokens[i].clone());
                                 i += 1;
@@ -263,7 +289,11 @@ impl Evaluator {
                         if arg_tokens.is_empty() {
                             // No argument - treat as function(ans)
                             if let Some(val) = self.variables.get("ans") {
-                                let result = functions::call_function(&name_lower, std::slice::from_ref(val), self.angle_mode)?;
+                                let result = functions::call_function(
+                                    &name_lower,
+                                    std::slice::from_ref(val),
+                                    self.angle_mode,
+                                )?;
                                 // Pop the virtual paren and function from stack
                                 op_stack.pop(); // LeftParen
                                 op_stack.pop(); // FunctionCall
@@ -275,13 +305,18 @@ impl Evaluator {
                             }
                         } else {
                             // Build a sub-expression string and evaluate it
-                            let sub_expr: String = arg_tokens.iter().map(|t| t.text.as_str()).collect::<Vec<_>>().join("");
+                            let sub_expr: String = arg_tokens
+                                .iter()
+                                .map(|t| t.text.as_str())
+                                .collect::<Vec<_>>()
+                                .join("");
                             let (arg_val, _) = self.eval_expression(&sub_expr, radix_char)?;
                             // Pop the virtual paren and function from stack
                             op_stack.pop(); // LeftParen
                             let func_item = op_stack.pop();
                             if let Some(StackItem::FunctionCall(fname, _)) = func_item {
-                                let result = functions::call_function(&fname, &[arg_val], self.angle_mode)?;
+                                let result =
+                                    functions::call_function(&fname, &[arg_val], self.angle_mode)?;
                                 output.push(result);
                             }
                         }
@@ -301,7 +336,10 @@ impl Evaluator {
 
                 TokenType::Operator => {
                     let op = match token.text.as_str() {
-                        "+" if expect_value => { i += 1; continue; } // unary plus: ignore
+                        "+" if expect_value => {
+                            i += 1;
+                            continue;
+                        } // unary plus: ignore
                         "-" if expect_value => Operator::UnaryMinus,
                         "+" => Operator::Add,
                         "-" => Operator::Sub,
@@ -457,33 +495,34 @@ impl Evaluator {
 }
 
 /// Apply an operator from the stack to the output stack
-fn apply_operator(item: &StackItem, output: &mut Vec<(HNumber, Option<NumberFormat>)>) -> Result<(), String> {
+fn apply_operator(
+    item: &StackItem,
+    output: &mut Vec<(HNumber, Option<NumberFormat>)>,
+) -> Result<(), String> {
     match item {
-        StackItem::Op(op) => {
-            match op {
-                Operator::UnaryMinus => {
-                    let (a, _) = output.pop().ok_or("Missing operand")?;
-                    output.push((-a, None));
-                }
-                _ => {
-                    let (b, _) = output.pop().ok_or("Missing operand")?;
-                    let (a, _) = output.pop().ok_or("Missing operand")?;
-                    let result = match op {
-                        Operator::Add => a + b,
-                        Operator::Sub => a - b,
-                        Operator::Mul => a * b,
-                        Operator::Div => a / b,
-                        Operator::Pow => HMath::raise(&a, &b),
-                        Operator::BitAnd => a & b,
-                        Operator::BitOr => a | b,
-                        Operator::Shl => a << b,
-                        Operator::Shr => a >> b,
-                        _ => unreachable!(),
-                    };
-                    output.push((result, None));
-                }
+        StackItem::Op(op) => match op {
+            Operator::UnaryMinus => {
+                let (a, _) = output.pop().ok_or("Missing operand")?;
+                output.push((-a, None));
             }
-        }
+            _ => {
+                let (b, _) = output.pop().ok_or("Missing operand")?;
+                let (a, _) = output.pop().ok_or("Missing operand")?;
+                let result = match op {
+                    Operator::Add => a + b,
+                    Operator::Sub => a - b,
+                    Operator::Mul => a * b,
+                    Operator::Div => a / b,
+                    Operator::Pow => HMath::raise(&a, &b),
+                    Operator::BitAnd => a & b,
+                    Operator::BitOr => a | b,
+                    Operator::Shl => a << b,
+                    Operator::Shr => a >> b,
+                    _ => unreachable!(),
+                };
+                output.push((result, None));
+            }
+        },
         StackItem::FunctionCall(name, argc) => {
             apply_function(name, *argc, output, AngleMode::Radian)?;
         }
@@ -511,7 +550,6 @@ fn apply_function(
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -526,7 +564,10 @@ mod tests {
                     failures.push(format!("{} => expected {}, got {}", expr, expected, actual));
                 }
             }
-            Err(err) => failures.push(format!("{} => expected {}, got error {}", expr, expected, err)),
+            Err(err) => failures.push(format!(
+                "{} => expected {}, got error {}",
+                expr, expected, err
+            )),
         }
     }
 
@@ -554,7 +595,10 @@ mod tests {
                     ));
                 }
             }
-            Err(err) => failures.push(format!("{} => expected {:.17}, got error {}", expr, expected, err)),
+            Err(err) => failures.push(format!(
+                "{} => expected {:.17}, got error {}",
+                expr, expected, err
+            )),
         }
     }
 
@@ -570,7 +614,10 @@ mod tests {
         let result = predicate(eval.evaluate(expr, '.'));
         match result {
             Ok(actual) => println!("[audit] {} => {}", expr, actual),
-            Err(reason) => failures.push(format!("{} => expected {}, got {}", expr, description, reason)),
+            Err(reason) => failures.push(format!(
+                "{} => expected {}, got {}",
+                expr, description, reason
+            )),
         }
     }
 
@@ -697,7 +744,9 @@ mod tests {
         let mut eval = Evaluator::new();
         let result = eval.evaluate("0.1 + 0.2 - 0.3", '.').unwrap();
         assert_eq!(
-            result.0.format_with(crate::math::NumberFormat::General, -1, '.'),
+            result
+                .0
+                .format_with(crate::math::NumberFormat::General, -1, '.'),
             "0"
         );
     }
@@ -707,12 +756,16 @@ mod tests {
         let mut eval = Evaluator::new();
         let result = eval.evaluate("e^(pi*i) + 1", '.').unwrap();
         assert_eq!(
-            result.0.format_with(crate::math::NumberFormat::General, -1, '.'),
+            result
+                .0
+                .format_with(crate::math::NumberFormat::General, -1, '.'),
             "0"
         );
         let result_j = eval.evaluate("e^(pi*j) + 1", '.').unwrap();
         assert_eq!(
-            result_j.0.format_with(crate::math::NumberFormat::General, -1, '.'),
+            result_j
+                .0
+                .format_with(crate::math::NumberFormat::General, -1, '.'),
             "0"
         );
     }
@@ -863,7 +916,13 @@ mod tests {
                 Err(err) => Err(err),
             },
         );
-        audit_close(&mut eval, "ln(10^308)", 709.1962086421661, 1e-9, &mut failures);
+        audit_close(
+            &mut eval,
+            "ln(10^308)",
+            709.1962086421661,
+            1e-9,
+            &mut failures,
+        );
 
         audit_close(
             &mut eval,
@@ -947,7 +1006,10 @@ mod tests {
     fn test_mixed_radix_arithmetic() {
         let mut eval = Evaluator::new();
         // 0xFF + 0b1 + 0o1 = 255 + 1 + 1 = 257
-        assert_eq!(eval.evaluate("0xFF + 0b1 + 0o1", '.').unwrap().0.value(), 257.0);
+        assert_eq!(
+            eval.evaluate("0xFF + 0b1 + 0o1", '.').unwrap().0.value(),
+            257.0
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1109,7 +1171,10 @@ mod tests {
     #[test]
     fn test_fn_average() {
         let mut eval = Evaluator::new();
-        assert_eq!(eval.evaluate("average(2, 4, 6)", '.').unwrap().0.value(), 4.0);
+        assert_eq!(
+            eval.evaluate("average(2, 4, 6)", '.').unwrap().0.value(),
+            4.0
+        );
     }
 
     #[test]
@@ -1178,7 +1243,9 @@ mod tests {
     fn test_fn_lngamma() {
         let mut eval = Evaluator::new();
         // lngamma(5) = ln(gamma(5)) = ln(24) ≈ 3.178
-        assert!((eval.evaluate("lngamma(5)", '.').unwrap().0.value() - 3.178053830347946).abs() < 1e-6);
+        assert!(
+            (eval.evaluate("lngamma(5)", '.').unwrap().0.value() - 3.178053830347946).abs() < 1e-6
+        );
     }
 
     #[test]
@@ -1191,14 +1258,20 @@ mod tests {
     #[test]
     fn test_fn_product() {
         let mut eval = Evaluator::new();
-        assert_eq!(eval.evaluate("product(2, 3, 4)", '.').unwrap().0.value(), 24.0);
+        assert_eq!(
+            eval.evaluate("product(2, 3, 4)", '.').unwrap().0.value(),
+            24.0
+        );
     }
 
     #[test]
     fn test_fn_round() {
         let mut eval = Evaluator::new();
         assert_eq!(eval.evaluate("round(3.7)", '.').unwrap().0.value(), 4.0);
-        assert_eq!(eval.evaluate("round(3.14159, 2)", '.').unwrap().0.value(), 3.14);
+        assert_eq!(
+            eval.evaluate("round(3.14159, 2)", '.').unwrap().0.value(),
+            3.14
+        );
     }
 
     #[test]
@@ -1218,14 +1291,20 @@ mod tests {
     #[test]
     fn test_fn_sum() {
         let mut eval = Evaluator::new();
-        assert_eq!(eval.evaluate("sum(1, 2, 3, 4)", '.').unwrap().0.value(), 10.0);
+        assert_eq!(
+            eval.evaluate("sum(1, 2, 3, 4)", '.').unwrap().0.value(),
+            10.0
+        );
     }
 
     #[test]
     fn test_fn_trunc() {
         let mut eval = Evaluator::new();
         assert_eq!(eval.evaluate("trunc(3.999)", '.').unwrap().0.value(), 3.0);
-        assert_eq!(eval.evaluate("trunc(3.14159, 3)", '.').unwrap().0.value(), 3.141);
+        assert_eq!(
+            eval.evaluate("trunc(3.14159, 3)", '.').unwrap().0.value(),
+            3.141
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1235,7 +1314,9 @@ mod tests {
     #[test]
     fn test_fn_exp() {
         let mut eval = Evaluator::new();
-        assert!((eval.evaluate("exp(1)", '.').unwrap().0.value() - std::f64::consts::E).abs() < 1e-12);
+        assert!(
+            (eval.evaluate("exp(1)", '.').unwrap().0.value() - std::f64::consts::E).abs() < 1e-12
+        );
     }
 
     #[test]
@@ -1331,7 +1412,10 @@ mod tests {
     fn test_fn_degrees_radians() {
         let mut eval = Evaluator::new();
         assert!((eval.evaluate("degrees(pi)", '.').unwrap().0.value() - 180.0).abs() < 1e-10);
-        assert!((eval.evaluate("radians(180)", '.').unwrap().0.value() - std::f64::consts::PI).abs() < 1e-12);
+        assert!(
+            (eval.evaluate("radians(180)", '.').unwrap().0.value() - std::f64::consts::PI).abs()
+                < 1e-12
+        );
     }
 
     #[test]
@@ -1381,9 +1465,27 @@ mod tests {
         // binomvar(10, 0.3) = 2.1
         assert!((eval.evaluate("binomvar(10, 0.3)", '.').unwrap().0.value() - 2.1).abs() < 1e-10);
         // binompmf: P(X=3) for n=10, p=0.3 ≈ 0.2668
-        assert!((eval.evaluate("binompmf(3, 10, 0.3)", '.').unwrap().0.value() - 0.26683).abs() < 1e-3);
+        assert!(
+            (eval
+                .evaluate("binompmf(3, 10, 0.3)", '.')
+                .unwrap()
+                .0
+                .value()
+                - 0.26683)
+                .abs()
+                < 1e-3
+        );
         // binomcdf: P(X≤3) for n=10, p=0.3 ≈ 0.6496
-        assert!((eval.evaluate("binomcdf(3, 10, 0.3)", '.').unwrap().0.value() - 0.6496).abs() < 1e-3);
+        assert!(
+            (eval
+                .evaluate("binomcdf(3, 10, 0.3)", '.')
+                .unwrap()
+                .0
+                .value()
+                - 0.6496)
+                .abs()
+                < 1e-3
+        );
     }
 
     #[test]
@@ -1426,15 +1528,34 @@ mod tests {
     fn test_fn_hypergeometric() {
         let mut eval = Evaluator::new();
         // hypermean(N=50, K=10, n=5) = n*K/N = 1
-        assert!((eval.evaluate("hypermean(50, 10, 5)", '.').unwrap().0.value() - 1.0).abs() < 1e-10);
+        assert!(
+            (eval
+                .evaluate("hypermean(50, 10, 5)", '.')
+                .unwrap()
+                .0
+                .value()
+                - 1.0)
+                .abs()
+                < 1e-10
+        );
         // hypervar(N=50, K=10, n=5) = n*K*(N-K)*(N-n) / (N^2*(N-1))
         // = 5*10*40*45 / (2500*49) = 90000/122500 ≈ 0.7347
-        assert!((eval.evaluate("hypervar(50, 10, 5)", '.').unwrap().0.value() - 0.7347).abs() < 1e-3);
+        assert!(
+            (eval.evaluate("hypervar(50, 10, 5)", '.').unwrap().0.value() - 0.7347).abs() < 1e-3
+        );
         // hyperpmf(k=2, N=50, K=10, n=5): P(X=2) for hypergeometric
-        let pmf = eval.evaluate("hyperpmf(2, 50, 10, 5)", '.').unwrap().0.value();
+        let pmf = eval
+            .evaluate("hyperpmf(2, 50, 10, 5)", '.')
+            .unwrap()
+            .0
+            .value();
         assert!(pmf > 0.0 && pmf < 1.0); // valid probability
-        // hypercdf(k=2, N=50, K=10, n=5): P(X<=2) >= P(X=2)
-        let cdf = eval.evaluate("hypercdf(2, 50, 10, 5)", '.').unwrap().0.value();
+                                         // hypercdf(k=2, N=50, K=10, n=5): P(X<=2) >= P(X=2)
+        let cdf = eval
+            .evaluate("hypercdf(2, 50, 10, 5)", '.')
+            .unwrap()
+            .0
+            .value();
         assert!(cdf >= pmf);
         assert!(cdf > 0.0 && cdf <= 1.0);
     }
@@ -1555,7 +1676,7 @@ mod tests {
         // Empty or whitespace-only should either error or return 0
         let r = eval.evaluate("   ", '.');
         match r {
-            Err(_) => {} // acceptable
+            Err(_) => {}                              // acceptable
             Ok((v, _)) => assert_eq!(v.value(), 0.0), // also acceptable
         }
     }

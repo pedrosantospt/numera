@@ -2,7 +2,7 @@
 // Top-level application menu: Session, View, Settings, Help.
 
 use crate::math::{AngleMode, NumberFormat};
-use crate::settings::Settings;
+use crate::settings::{Settings, FontFamily, FontSettings};
 use crate::evaluator::Evaluator;
 
 #[allow(clippy::too_many_arguments)]
@@ -69,6 +69,8 @@ fn show_settings_menu(
         show_format_submenu(ui, settings);
         show_precision_submenu(ui, settings);
         show_radix_submenu(ui, settings);
+        ui.separator();
+        show_font_submenu(ui, settings);
         ui.separator();
         ui.checkbox(&mut settings.auto_calc, "Live Preview");
         ui.checkbox(&mut settings.save_session, "Save Session");
@@ -146,6 +148,36 @@ fn show_radix_submenu(ui: &mut egui::Ui, settings: &mut Settings) {
             }
         }
     });
+}
+
+fn show_font_submenu(ui: &mut egui::Ui, settings: &mut Settings) {
+    ui.menu_button("Fonts", |ui| {
+        show_font_settings(ui, "Expression", &mut settings.expression_font);
+        show_font_settings(ui, "Result", &mut settings.result_font);
+        show_font_settings(ui, "Input", &mut settings.input_font);
+        ui.separator();
+        if ui.button("Reset to Defaults").clicked() {
+            settings.reset_fonts();
+            ui.close_menu();
+        }
+    });
+}
+
+fn show_font_settings(ui: &mut egui::Ui, label: &str, font: &mut FontSettings) {
+    ui.menu_button(
+        format!("{}: {} {:.0}px", label, font.family.label(), font.size),
+        |ui| {
+            ui.label(egui::RichText::new("Family").strong());
+            for family in [FontFamily::Monospace, FontFamily::Proportional] {
+                if ui.radio(font.family == family, family.label()).clicked() {
+                    font.family = family;
+                }
+            }
+            ui.separator();
+            ui.label(egui::RichText::new("Size").strong());
+            ui.add(egui::Slider::new(&mut font.size, 8.0..=32.0).suffix("px"));
+        },
+    );
 }
 
 fn show_help_menu(ui: &mut egui::Ui, show_about: &mut bool) {

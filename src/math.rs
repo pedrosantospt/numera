@@ -55,8 +55,6 @@ pub enum NumberFormat {
     Binary,
 }
 
-
-
 /// Angle mode for trigonometric functions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum AngleMode {
@@ -265,11 +263,7 @@ impl Default for HNumber {
 
 impl fmt::Display for HNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.format_with(NumberFormat::General, -1, '.')
-        )
+        write!(f, "{}", self.format_with(NumberFormat::General, -1, '.'))
     }
 }
 
@@ -301,9 +295,12 @@ impl Add for HNumber {
     type Output = HNumber;
 
     fn add(self, rhs: HNumber) -> HNumber {
-        binary_numeric_op(&self, &rhs, |a, b| a + b, |ar, ai, br, bi| {
-            (ar + br, ai + bi)
-        })
+        binary_numeric_op(
+            &self,
+            &rhs,
+            |a, b| a + b,
+            |ar, ai, br, bi| (ar + br, ai + bi),
+        )
     }
 }
 
@@ -311,9 +308,12 @@ impl Sub for HNumber {
     type Output = HNumber;
 
     fn sub(self, rhs: HNumber) -> HNumber {
-        binary_numeric_op(&self, &rhs, |a, b| a - b, |ar, ai, br, bi| {
-            (ar - br, ai - bi)
-        })
+        binary_numeric_op(
+            &self,
+            &rhs,
+            |a, b| a - b,
+            |ar, ai, br, bi| (ar - br, ai - bi),
+        )
     }
 }
 
@@ -321,12 +321,20 @@ impl Mul for HNumber {
     type Output = HNumber;
 
     fn mul(self, rhs: HNumber) -> HNumber {
-        binary_numeric_op(&self, &rhs, |a, b| a * b, |ar, ai, br, bi| {
-            (
-                quantize(&(ar.clone() * br.clone() - ai.clone() * bi.clone()), INTERNAL_DIGITS),
-                quantize(&(ar * bi + ai * br), INTERNAL_DIGITS),
-            )
-        })
+        binary_numeric_op(
+            &self,
+            &rhs,
+            |a, b| a * b,
+            |ar, ai, br, bi| {
+                (
+                    quantize(
+                        &(ar.clone() * br.clone() - ai.clone() * bi.clone()),
+                        INTERNAL_DIGITS,
+                    ),
+                    quantize(&(ar * bi + ai * br), INTERNAL_DIGITS),
+                )
+            },
+        )
     }
 }
 
@@ -338,16 +346,24 @@ impl Div for HNumber {
             return HNumber::nan_with_error(MathError::DivByZero);
         }
 
-        binary_numeric_op(&self, &rhs, |a, b| a / b, |ar, ai, br, bi| {
-            let denom = br.clone() * br.clone() + bi.clone() * bi.clone();
-            if denom.is_zero() {
-                return (BigRational::zero(), BigRational::zero());
-            }
-            (
-                quantize(&((ar.clone() * br.clone() + ai.clone() * bi.clone()) / denom.clone()), INTERNAL_DIGITS),
-                quantize(&((ai * br - ar * bi) / denom), INTERNAL_DIGITS),
-            )
-        })
+        binary_numeric_op(
+            &self,
+            &rhs,
+            |a, b| a / b,
+            |ar, ai, br, bi| {
+                let denom = br.clone() * br.clone() + bi.clone() * bi.clone();
+                if denom.is_zero() {
+                    return (BigRational::zero(), BigRational::zero());
+                }
+                (
+                    quantize(
+                        &((ar.clone() * br.clone() + ai.clone() * bi.clone()) / denom.clone()),
+                        INTERNAL_DIGITS,
+                    ),
+                    quantize(&((ai * br - ar * bi) / denom), INTERNAL_DIGITS),
+                )
+            },
+        )
     }
 }
 
@@ -585,7 +601,9 @@ impl HMath {
 
     pub fn log(x: &HNumber) -> HNumber {
         match Self::ln(x).real_value() {
-            Some(v) => HNumber::from_real(quantize(&(v.clone() / ln10_r().clone()), INTERNAL_DIGITS)),
+            Some(v) => {
+                HNumber::from_real(quantize(&(v.clone() / ln10_r().clone()), INTERNAL_DIGITS))
+            }
             None => {
                 let ln = Self::ln(x);
                 if let Some((re, im)) = ln.as_complex_parts() {
@@ -602,7 +620,9 @@ impl HMath {
 
     pub fn lg(x: &HNumber) -> HNumber {
         match Self::ln(x).real_value() {
-            Some(v) => HNumber::from_real(quantize(&(v.clone() / ln2_r().clone()), INTERNAL_DIGITS)),
+            Some(v) => {
+                HNumber::from_real(quantize(&(v.clone() / ln2_r().clone()), INTERNAL_DIGITS))
+            }
             None => HNumber::nan_with_error(MathError::OutOfDomain),
         }
     }
@@ -655,11 +675,7 @@ impl HMath {
 
     pub fn tan(x: &HNumber) -> HNumber {
         let cosine = Self::cos(x);
-        if cosine
-            .real_value()
-            .map(is_near_zero)
-            .unwrap_or(false)
-        {
+        if cosine.real_value().map(is_near_zero).unwrap_or(false) {
             HNumber::nan_with_error(MathError::OutOfDomain)
         } else {
             Self::sin(x) / cosine
@@ -668,11 +684,7 @@ impl HMath {
 
     pub fn cot(x: &HNumber) -> HNumber {
         let sine = Self::sin(x);
-        if sine
-            .real_value()
-            .map(is_near_zero)
-            .unwrap_or(false)
-        {
+        if sine.real_value().map(is_near_zero).unwrap_or(false) {
             HNumber::nan_with_error(MathError::OutOfDomain)
         } else {
             Self::cos(x) / sine
@@ -681,11 +693,7 @@ impl HMath {
 
     pub fn sec(x: &HNumber) -> HNumber {
         let cosine = Self::cos(x);
-        if cosine
-            .real_value()
-            .map(is_near_zero)
-            .unwrap_or(false)
-        {
+        if cosine.real_value().map(is_near_zero).unwrap_or(false) {
             HNumber::nan_with_error(MathError::OutOfDomain)
         } else {
             HNumber::from_i64(1) / cosine
@@ -694,11 +702,7 @@ impl HMath {
 
     pub fn csc(x: &HNumber) -> HNumber {
         let sine = Self::sin(x);
-        if sine
-            .real_value()
-            .map(is_near_zero)
-            .unwrap_or(false)
-        {
+        if sine.real_value().map(is_near_zero).unwrap_or(false) {
             HNumber::nan_with_error(MathError::OutOfDomain)
         } else {
             HNumber::from_i64(1) / sine
@@ -742,11 +746,19 @@ impl HMath {
     }
 
     pub fn degrees(x: &HNumber) -> HNumber {
-        x.clone() * HNumber::from_real(quantize(&(rat_from_i64(180) / pi_r().clone()), INTERNAL_DIGITS))
+        x.clone()
+            * HNumber::from_real(quantize(
+                &(rat_from_i64(180) / pi_r().clone()),
+                INTERNAL_DIGITS,
+            ))
     }
 
     pub fn radians(x: &HNumber) -> HNumber {
-        x.clone() * HNumber::from_real(quantize(&(pi_r().clone() / rat_from_i64(180)), INTERNAL_DIGITS))
+        x.clone()
+            * HNumber::from_real(quantize(
+                &(pi_r().clone() / rat_from_i64(180)),
+                INTERNAL_DIGITS,
+            ))
     }
 
     pub fn factorial(x: &HNumber) -> HNumber {
@@ -874,7 +886,10 @@ impl HMath {
     pub fn binomial_pmf(k: &HNumber, n: &HNumber, p: &HNumber) -> HNumber {
         let comb = Self::nCr(n, k);
         let pk = Self::raise(p, k);
-        let qnk = Self::raise(&(HNumber::from_i64(1) - p.clone()), &(n.clone() - k.clone()));
+        let qnk = Self::raise(
+            &(HNumber::from_i64(1) - p.clone()),
+            &(n.clone() - k.clone()),
+        );
         comb * pk * qnk
     }
 
@@ -951,7 +966,12 @@ impl HMath {
     }
 }
 
-fn binary_numeric_op<FReal, FComplex>(lhs: &HNumber, rhs: &HNumber, real_op: FReal, complex_op: FComplex) -> HNumber
+fn binary_numeric_op<FReal, FComplex>(
+    lhs: &HNumber,
+    rhs: &HNumber,
+    real_op: FReal,
+    complex_op: FComplex,
+) -> HNumber
 where
     FReal: Fn(BigRational, BigRational) -> BigRational,
     FComplex: Fn(BigRational, BigRational, BigRational, BigRational) -> (BigRational, BigRational),
@@ -1010,9 +1030,7 @@ fn integer_pair(a: &HNumber, b: &HNumber) -> Result<(BigInt, BigInt), MathError>
 }
 
 fn integer_value(x: &HNumber) -> Option<BigInt> {
-    x.real_value()
-        .filter(|v| v.is_integer())
-        .map(integer_trunc)
+    x.real_value().filter(|v| v.is_integer()).map(integer_trunc)
 }
 
 fn rat_from_i64(v: i64) -> BigRational {
@@ -1080,7 +1098,9 @@ fn parse_decimal_rational(s: &str) -> Result<BigRational, MathError> {
     if scale >= 0 {
         Ok(BigRational::new(numerator, pow10(scale as usize)))
     } else {
-        Ok(BigRational::from_integer(numerator * pow10((-scale) as usize)))
+        Ok(BigRational::from_integer(
+            numerator * pow10((-scale) as usize),
+        ))
     }
 }
 
@@ -1095,7 +1115,10 @@ fn parse_complex_literal(s: &str) -> Result<Option<HNumber>, MathError> {
         return Ok(Some(HNumber::imaginary_unit()));
     }
     if body == "-" {
-        return Ok(Some(HNumber::from_complex(BigRational::zero(), -BigRational::one())));
+        return Ok(Some(HNumber::from_complex(
+            BigRational::zero(),
+            -BigRational::one(),
+        )));
     }
 
     if let Some(split) = find_complex_split(body) {
@@ -1142,14 +1165,27 @@ fn format_real_value(v: &BigRational, fmt: NumberFormat, precision: i32) -> Stri
                 if !(-4..15).contains(&exp) {
                     format_scientific(v, if precision < 0 { 18 } else { precision }, false)
                 } else {
-                    rational_to_decimal_string(v, if precision < 0 { MAX_IO_DIGITS as usize } else { precision as usize }, false)
+                    rational_to_decimal_string(
+                        v,
+                        if precision < 0 {
+                            MAX_IO_DIGITS as usize
+                        } else {
+                            precision as usize
+                        },
+                        false,
+                    )
                 }
             }
         }
     }
 }
 
-fn format_complex_value(re: &BigRational, im: &BigRational, fmt: NumberFormat, precision: i32) -> String {
+fn format_complex_value(
+    re: &BigRational,
+    im: &BigRational,
+    fmt: NumberFormat,
+    precision: i32,
+) -> String {
     let threshold = epsilon((MAX_IO_DIGITS as usize).saturating_sub(8));
     let re = if re.abs() < threshold {
         BigRational::zero()
@@ -1171,7 +1207,10 @@ fn format_complex_value(re: &BigRational, im: &BigRational, fmt: NumberFormat, p
     let im_text = if im_abs == BigRational::one() {
         "i".to_string()
     } else {
-        format!("{}i", format_real_value(&im_abs, NumberFormat::General, precision))
+        format!(
+            "{}i",
+            format_real_value(&im_abs, NumberFormat::General, precision)
+        )
     };
 
     if re_zero {
@@ -1276,7 +1315,15 @@ fn format_scientific(v: &BigRational, precision: i32, engineering: bool) -> Stri
         exp = Integer::div_floor(&exp, &3) * 3;
     }
     let scaled = quantize(&(v.clone() / pow10_r(exp)), INTERNAL_DIGITS);
-    let mantissa = rational_to_decimal_string(&scaled, if precision < 0 { 18 } else { precision as usize }, false);
+    let mantissa = rational_to_decimal_string(
+        &scaled,
+        if precision < 0 {
+            18
+        } else {
+            precision as usize
+        },
+        false,
+    );
     format!("{}e{}", mantissa, exp)
 }
 
@@ -1402,7 +1449,10 @@ fn sqrt_real(x: &BigRational, digits: usize) -> BigRational {
     let tol = epsilon(digits);
 
     for _ in 0..128 {
-        let next = quantize(&((guess.clone() + x.clone() / guess.clone()) / two.clone()), digits + 4);
+        let next = quantize(
+            &((guess.clone() + x.clone() / guess.clone()) / two.clone()),
+            digits + 4,
+        );
         let delta = (next.clone() - guess.clone()).abs();
         guess = next;
         if delta < tol {
@@ -1418,7 +1468,10 @@ fn exp_real(x: &BigRational, digits: usize) -> BigRational {
         return BigRational::one();
     }
     if x.is_negative() {
-        return quantize(&(BigRational::one() / exp_real(&x.abs(), digits + 4)), digits);
+        return quantize(
+            &(BigRational::one() / exp_real(&x.abs(), digits + 4)),
+            digits,
+        );
     }
 
     let mut halvings = 0usize;
@@ -1433,7 +1486,10 @@ fn exp_real(x: &BigRational, digits: usize) -> BigRational {
     let mut term = BigRational::one();
 
     for n in 1..SERIES_LIMIT {
-        term = quantize(&(term * reduced.clone() / rat_from_i64(n as i64)), digits + 6);
+        term = quantize(
+            &(term * reduced.clone() / rat_from_i64(n as i64)),
+            digits + 6,
+        );
         sum += term.clone();
         if term.abs() < tol {
             break;
@@ -1469,7 +1525,10 @@ fn ln_real(x: &BigRational, digits: usize) -> BigRational {
         factor *= 2;
     }
 
-    let t = quantize(&((normalized.clone() - one.clone()) / (normalized.clone() + one.clone())), digits + 8);
+    let t = quantize(
+        &((normalized.clone() - one.clone()) / (normalized.clone() + one.clone())),
+        digits + 8,
+    );
     let t2 = quantize(&(t.clone() * t.clone()), digits + 8);
     let tol = epsilon(digits + 3);
     let mut sum = BigRational::zero();
@@ -1486,8 +1545,14 @@ fn ln_real(x: &BigRational, digits: usize) -> BigRational {
         denom += 2;
     }
 
-    let ln_normalized = quantize(&(rat_from_i64(2) * sum * BigRational::from_integer(factor)), digits + 8);
-    quantize(&(ln_normalized + ln10_r().clone() * rat_from_i64(exp10)), digits)
+    let ln_normalized = quantize(
+        &(rat_from_i64(2) * sum * BigRational::from_integer(factor)),
+        digits + 8,
+    );
+    quantize(
+        &(ln_normalized + ln10_r().clone() * rat_from_i64(exp10)),
+        digits,
+    )
 }
 
 fn sin_real(x: &BigRational, digits: usize) -> BigRational {
@@ -1531,7 +1596,10 @@ fn cos_real(x: &BigRational, digits: usize) -> BigRational {
 fn reduce_angle(x: &BigRational) -> BigRational {
     let tau = two_pi_r().clone();
     let quotient = round_to_int(&(x.clone() / tau.clone()));
-    quantize(&(x.clone() - tau * BigRational::from_integer(quotient)), INTERNAL_DIGITS)
+    quantize(
+        &(x.clone() - tau * BigRational::from_integer(quotient)),
+        INTERNAL_DIGITS,
+    )
 }
 
 fn complex_exp(re: &BigRational, im: &BigRational) -> HNumber {
@@ -1545,7 +1613,10 @@ fn complex_exp(re: &BigRational, im: &BigRational) -> HNumber {
 }
 
 fn complex_ln(re: &BigRational, im: &BigRational) -> HNumber {
-    let modulus = sqrt_real(&(re.clone() * re.clone() + im.clone() * im.clone()), INTERNAL_DIGITS);
+    let modulus = sqrt_real(
+        &(re.clone() * re.clone() + im.clone() * im.clone()),
+        INTERNAL_DIGITS,
+    );
     let arg = rational_to_f64(im).atan2(rational_to_f64(re));
     HNumber::from_complex(
         ln_real(&modulus, INTERNAL_DIGITS),
@@ -1554,11 +1625,27 @@ fn complex_ln(re: &BigRational, im: &BigRational) -> HNumber {
 }
 
 fn complex_sqrt(re: &BigRational, im: &BigRational) -> HNumber {
-    let magnitude = sqrt_real(&(re.clone() * re.clone() + im.clone() * im.clone()), INTERNAL_DIGITS);
+    let magnitude = sqrt_real(
+        &(re.clone() * re.clone() + im.clone() * im.clone()),
+        INTERNAL_DIGITS,
+    );
     let two = rat_from_i64(2);
-    let real = sqrt_real(&quantize(&((magnitude.clone() + re.clone()) / two.clone()), INTERNAL_DIGITS), INTERNAL_DIGITS);
-    let imag_mag = sqrt_real(&quantize(&((magnitude - re.clone()) / two), INTERNAL_DIGITS), INTERNAL_DIGITS);
-    let imag = if im.is_negative() { -imag_mag } else { imag_mag };
+    let real = sqrt_real(
+        &quantize(
+            &((magnitude.clone() + re.clone()) / two.clone()),
+            INTERNAL_DIGITS,
+        ),
+        INTERNAL_DIGITS,
+    );
+    let imag_mag = sqrt_real(
+        &quantize(&((magnitude - re.clone()) / two), INTERNAL_DIGITS),
+        INTERNAL_DIGITS,
+    );
+    let imag = if im.is_negative() {
+        -imag_mag
+    } else {
+        imag_mag
+    };
     HNumber::from_complex(real, imag)
 }
 
@@ -1793,8 +1880,10 @@ fn ln10_r() -> &'static BigRational {
 fn ln2_r() -> &'static BigRational {
     static VALUE: OnceLock<BigRational> = OnceLock::new();
     VALUE.get_or_init(|| {
-        parse_decimal_rational("0.693147180559945309417232121458176568075500134360255254120680009493393621969")
-            .unwrap()
+        parse_decimal_rational(
+            "0.693147180559945309417232121458176568075500134360255254120680009493393621969",
+        )
+        .unwrap()
     })
 }
 

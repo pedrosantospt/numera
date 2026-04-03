@@ -253,10 +253,12 @@ impl NumeraApp {
                     }
                     if self.settings.show_variables {
                         let variables = self.evaluator.user_variables();
-                        panels::show_variables_panel(
+                        if let Some(name) = panels::show_variables_panel(
                             ui, &variables, &mut self.variables_filter, &mut insert_text,
                             self.settings.result_format, self.settings.precision, self.settings.radix_char,
-                        );
+                        ) {
+                            self.evaluator.delete_variable(&name);
+                        }
                     }
 
                     if let Some(text) = insert_text {
@@ -271,9 +273,13 @@ impl NumeraApp {
         egui::TopBottomPanel::bottom("editor_panel")
             .show_separator_line(true)
             .show(ctx, |ui| {
+                let input_font_id = match self.settings.input_font.family {
+                    crate::settings::FontFamily::Monospace => egui::FontId::monospace(self.settings.input_font.size),
+                    crate::settings::FontFamily::Proportional => egui::FontId::proportional(self.settings.input_font.size),
+                };
                 let response = ui.add(
                     egui::TextEdit::singleline(&mut self.editor.text)
-                        .font(egui::FontId::monospace(16.0))
+                        .font(input_font_id)
                         .desired_width(f32::INFINITY)
                         .hint_text(egui::RichText::new("Type expression…").color(Theme::TEXT_DIM))
                         .text_color(Theme::TEXT)
@@ -330,6 +336,7 @@ impl NumeraApp {
                         ui, &self.history,
                         self.settings.result_format, self.settings.precision,
                         self.settings.radix_char, &mut self.editor.text,
+                        self.settings.expression_font, self.settings.result_font,
                     );
                 });
         });

@@ -41,7 +41,7 @@ pub fn show_constants_panel(
                     ui.collapsing(category, |ui| {
                         for c in &consts {
                             ui.horizontal(|ui| {
-                                if ui.small_button("⊕").on_hover_text("Insert value").clicked() {
+                                if ui.small_button("+").on_hover_text("Insert value").clicked() {
                                     *insert_text = Some(c.value.to_string());
                                 }
                                 let unit_str = if c.unit.is_empty() {
@@ -103,7 +103,7 @@ pub fn show_functions_panel(
                         for func in &funcs {
                             ui.horizontal(|ui| {
                                 if ui
-                                    .small_button("⊕")
+                                    .small_button("+")
                                     .on_hover_text("Insert function")
                                     .clicked()
                                 {
@@ -126,7 +126,7 @@ pub fn show_functions_panel(
     );
 }
 
-/// Variables panel
+/// Variables panel — returns the name of a variable to delete, if any.
 pub fn show_variables_panel(
     ui: &mut egui::Ui,
     variables: &[(String, HNumber)],
@@ -135,7 +135,9 @@ pub fn show_variables_panel(
     format: NumberFormat,
     precision: i32,
     radix_char: char,
-) {
+) -> Option<String> {
+    let mut delete_var: Option<String> = None;
+
     ui.collapsing(
         egui::RichText::new("📐 Variables").strong().color(Theme::TEXT),
         |ui| {
@@ -157,23 +159,40 @@ pub fn show_variables_panel(
                 for (name, value) in variables {
                     if filter_lower.is_empty() || name.to_lowercase().contains(&filter_lower) {
                         let val_str = value.format_with(format, precision, radix_char);
+                        let truncated = if val_str.len() > 20 {
+                            format!("{}…", &val_str[..20])
+                        } else {
+                            val_str.clone()
+                        };
                         ui.horizontal(|ui| {
                             if ui
-                                .small_button("⊕")
+                                .small_button("+")
                                 .on_hover_text("Insert variable name")
                                 .clicked()
                             {
                                 *insert_text = Some(name.clone());
                             }
-                            ui.label(
-                                egui::RichText::new(format!("{} = {}", name, val_str))
-                                    .font(egui::FontId::monospace(11.0))
-                                    .color(Theme::TEXT_DIM),
-                            );
+                            if ui
+                                .small_button("x")
+                                .on_hover_text("Delete variable")
+                                .clicked()
+                            {
+                                delete_var = Some(name.clone());
+                            }
+                            let label = egui::RichText::new(format!("{} = {}", name, truncated))
+                                .font(egui::FontId::monospace(11.0))
+                                .color(Theme::TEXT_DIM);
+                            if truncated.len() < val_str.len() {
+                                ui.label(label).on_hover_text(&val_str);
+                            } else {
+                                ui.label(label);
+                            }
                         });
                     }
                 }
             }
         },
     );
+
+    delete_var
 }
