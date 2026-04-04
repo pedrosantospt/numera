@@ -48,12 +48,13 @@ Organized by category: General Physics, Electromagnetic, Atomic & Nuclear, Physi
 ### GUI (egui)
 - **Dark theme** — Tokyo-Night inspired colour palette
 - **Terminal-style layout** — history grows upward, input pinned at the bottom
-- **Result display** — scrollable history with click-to-reinsert
+- **Result display** — scrollable history with click-to-reinsert, long numbers wrap cleanly
 - **Live preview** — see the result as you type
 - **On-screen keypad** — toggle-able buttons for touch/mouse input
-- **Side panels** — Constants, Functions, Variables (filterable)
+- **Side panels** — Constants, Functions, Variables (filterable, with delete)
 - **Menus** — Session, View, Settings, Help
 - **Settings** — result format, angle mode, precision, radix character
+- **Configurable fonts** — family (Monospace/Proportional) and size for expression, result, and input areas with reset to defaults
 - **Session persistence** — history, variables, and settings saved automatically
 - **About dialog** with logo
 
@@ -136,5 +137,9 @@ numera/
 ## License
 
 GPL-2.0-or-later
+
+## Author
+
+Pedro Santos
 
 Inspired by [SpeedCrunch](http://speedcrunch.org).
